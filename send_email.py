@@ -10,7 +10,7 @@ from remove_csv_and_xlsx_files import *
 load_dotenv()
 
 
-def send_email(to_addresses, subject, body):
+def send_email(to_addresses, subject, body, username):
     # Set up the email server and login credentials
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
@@ -29,7 +29,7 @@ def send_email(to_addresses, subject, body):
     msg.attach(MIMEText(body, 'plain'))
 
     # Attach the CSV file
-    filename = f'tenders_{today_date}_filtered.xlsx'
+    filename = f'tenders_{today_date}_filtered_{username}.xlsx'
 
     if os.path.exists(filename):
         attachment = open(filename, 'rb')
@@ -54,7 +54,7 @@ def send_email(to_addresses, subject, body):
     server.quit()
 
     print('Email sent successfully!')
-    remove_csv_and_xlsx_files()
+    remove_csv_and_xlsx_files(username)
     
 if __name__ == '__main__':
     send_email(to_addresses, subject, body)

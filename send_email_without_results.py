@@ -28,6 +28,5 @@ def send_email_without_results(to_addresses, subject, body):
     server.sendmail(email_address, to_addresses, text)
 
     server.quit()
-    remove_csv_and_xlsx_files()
 
     print('Email sent successfully!')

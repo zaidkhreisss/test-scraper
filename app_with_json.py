@@ -4,7 +4,7 @@ import time
 import os
 import json
 import pandas as pd
-import queue  # Import the queue module
+import queue
 from users import user_data
 from send_email import send_email
 from dotenv import load_dotenv
@@ -13,11 +13,9 @@ from send_email_without_results import *
 
 load_dotenv()
 
-# Initialize a request queue
+# Initialize a single-threaded request queue
 request_queue = queue.Queue()
-queue_lock = threading.Lock()  # To manage access to the queue
 
-# Save progress to a file for each user
 def save_user_progress_to_file(username, progress):
     file_path = f"{username}_progress.json"
     with open(file_path, "w") as f:
@@ -30,27 +28,17 @@ def load_user_progress_from_file(username):
             return json.load(f)
     return {"task_complete": True}
 
-# Function to check user credentials
 def check_credentials(username, password):
     return username in user_data and user_data[username]["password"] == password
 
-# Function to check if the current user's task is complete
 def check_user_task(username):
     progress = load_user_progress_from_file(username)
     return not progress.get("task_complete", True)
 
-# Save task progress
-def save_user_progress(username, keywords, selected_option, task_complete):
-    user_data[username]["progress"] = {
-        "keywords": keywords,
-        "selected_option": selected_option,
-        "task_complete": task_complete
-    }
-
-# Function to check if any task is in progress for the logged-in user
-def is_task_in_progress(username):
+def save_user_progress(username, task_complete):
     progress = load_user_progress_from_file(username)
-    return not progress.get("task_complete", True)
+    progress["task_complete"] = task_complete
+    save_user_progress_to_file(username, progress)
 
 def extract_keywords_from_file(uploaded_file):
     try:
@@ -96,27 +84,23 @@ def show_email_input_page():
 
     if "email" not in st.session_state:
         st.session_state["email"] = ""
-    if "keywords" not in st.session_state:
-        st.session_state["keywords"] = ""
     if "selected_option" not in st.session_state:
         st.session_state["selected_option"] = ""
-    if "task_in_progress" not in st.session_state:
-        st.session_state["task_in_progress"] = False
-
+    
     st.session_state["email"] = st.text_input("Please Enter your email(s) (comma separated).", value=st.session_state["email"])
     
     if not st.session_state["email"]:
         st.warning("Please enter your email to proceed.")
         return
 
-    if is_task_in_progress(st.session_state["username"]):
+    if check_user_task(st.session_state["username"]):
         st.warning(f"A task is already running for {st.session_state['username']}. Please wait until it is complete.")
         return
 
     uploaded_file = st.file_uploader("Upload a file containing keywords (CSV or Excel)", type=["csv", "xlsx"])
     file_keywords = extract_keywords_from_file(uploaded_file) if uploaded_file else []
 
-    manual_keywords = st.text_input("Enter keywords for search (comma-separated)", value=st.session_state["keywords"])
+    manual_keywords = st.text_input("Enter keywords for search (comma-separated)", value="")
     manual_keywords_list = [kw.strip() for kw in manual_keywords.split(",") if kw.strip()]
 
     all_keywords = list(set(file_keywords + manual_keywords_list))
@@ -128,7 +112,7 @@ def show_email_input_page():
                         "المهن الاستشارية", "السياحة والمطاعم والفنادق وتنظيم المعارض",
                         "المالية والتمويل والتأمين", "الخدمات الأخرى"]
 
-    st.session_state["selected_option"] = st.selectbox("النشاط الاساسي", dropdown_options, index=dropdown_options.index(st.session_state["selected_option"]) if st.session_state["selected_option"] else 0)
+    st.session_state["selected_option"] = st.selectbox("النشاط الاساسي", dropdown_options)
 
     emails = [email.strip() for email in st.session_state["email"].split(",") if email.strip()]
 
@@ -137,54 +121,52 @@ def show_email_input_page():
         request_queue.put((emails, all_keywords, st.session_state["selected_option"], st.session_state["username"]))
         st.info("Your request has been added to the queue. Processing will start shortly.")
 
-    # Check task completion
-    if check_user_task(st.session_state["username"]):
-        st.success("Task completed successfully! You can now submit a new request.")
-
 def process_request(emails, keywords, selected_option, username):
     try:
-        progress = load_user_progress_from_file(username)
-        progress["task_complete"] = False
-        save_user_progress_to_file(username, progress)
+        save_user_progress(username, False)
 
-        time.sleep(5)  # Simulate processing time
+        # Simulate processing time
+        time.sleep(5)  # Replace this with actual processing logic
 
         subject = f"Search Results for {', '.join(keywords)}"
         body = f"Keywords: {', '.join(keywords)}\nSelected Option: {selected_option}\nPlease find the attached results."
 
-        get_terms_files(keywords, str(selected_option))
-        agg_files()
+        get_terms_files(keywords, str(selected_option), username)
+        agg_files(username)
 
         today_date = pd.to_datetime("today").strftime("%Y-%m-%d")
-        file_name = f"tenders_{today_date}_filtered.csv"
+        file_name = f"tenders_{today_date}_filtered_{username}.csv"
 
         if not os.path.isfile(file_name):
             send_email_without_results(emails, subject, body)
-            return  # Early return if no results found
+            return
 
-        send_email(emails, subject, body)
+        send_email(emails, subject, body, username)
 
     except Exception as e:
-        print(f"Error: {e}")  # Log the error
+        print(f"Error: {e}")
 
     finally:
-        progress = load_user_progress_from_file(username)
-        progress["task_complete"] = True
-        save_user_progress_to_file(username, progress)
+        save_user_progress(username, True)
 
 def request_processor():
     while True:
-        # Get the next request from the queue and process it
-        try:
-            emails, keywords, selected_option, username = request_queue.get()
-            process_request(emails, keywords, selected_option, username)
-        finally:
-            request_queue.task_done()
+        # Wait until a request is available in the queue
+        emails, keywords, selected_option, username = request_queue.get()
+        
+        # Process the request
+        process_request(emails, keywords, selected_option, username)
+        
+        # Mark the task as done
+        request_queue.task_done()
 
 if __name__ == "__main__":
-    # Start the request processing thread
+    # Start a single background thread for request processing
     threading.Thread(target=request_processor, daemon=True).start()
     main()
+
+
+
 
 
 

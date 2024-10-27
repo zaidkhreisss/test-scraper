@@ -51,7 +51,7 @@ chrome_options.add_argument("--log-level=1")
 # driver = webdriver.Chrome(options=chrome_options)
 # driver.maximize_window()
 
-def post_process_results(term, tenders, term_tenders):
+def post_process_results(term, tenders, term_tenders, username):
     if not term_tenders:
         print(f"No results found for term: {term}")
         return
@@ -81,7 +81,7 @@ def post_process_results(term, tenders, term_tenders):
     df['proposal_deadline'] = df['proposal_deadline'].str.replace('آخر موعد لتقديم العروض', '')
     df['proposal_start_date'] = df['proposal_start_date'].str.replace('تاريخ ووقت فتح العروض', '')
 
-    df.to_csv(f"tenders_{term}.csv", index=False, encoding='utf-8-sig')
+    df.to_csv(f"tenders_{term}_{username}.csv", index=False, encoding='utf-8-sig')
     return df
 
 def get_tenders_from_page(term_tenders,driver):
@@ -103,7 +103,7 @@ def get_tenders_from_page(term_tenders,driver):
             el.insert(-3, "N/A")            
         i += 1
         
-def start_parsing(term, tenders, term_tenders,driver):
+def start_parsing(term, tenders, term_tenders,driver, username):
     current_page = 1
     try:
         pages_elements = driver.find_element(By.XPATH, '//*[@id="cardsresult"]/div[2]/div/nav/ul')
@@ -112,7 +112,7 @@ def start_parsing(term, tenders, term_tenders,driver):
         get_tenders_from_page(term_tenders,driver)  
         if term_tenders:  
             tenders[term] = term_tenders
-            post_process_results(term, tenders, term_tenders)
+            post_process_results(term, tenders, term_tenders, username)
         else:
             print(f"No tenders found for term: {term}")
         return
@@ -149,7 +149,7 @@ def start_parsing(term, tenders, term_tenders,driver):
 
     if term_tenders:  
         tenders[term] = term_tenders
-        post_process_results(term, tenders, term_tenders)
+        post_process_results(term, tenders, term_tenders, username)
     else:
         print(f"No tenders found for term: {term}")
 
@@ -215,7 +215,7 @@ def start_parsing(term, tenders, term_tenders,driver):
 #     else:
 #         tenders[term] = term_tenders
 #         post_process_results(term, tenders, term_tenders)
-def setup_search(term, tenders, term_tenders, main_activityy):
+def setup_search(term, tenders, term_tenders, main_activityy, username):
     # Each request gets its own WebDriver instance
     driver = webdriver.Chrome(options=chrome_options)
     driver.maximize_window()
@@ -266,30 +266,30 @@ def setup_search(term, tenders, term_tenders, main_activityy):
         final_search_button.click()
         time.sleep(4)
 
-        start_parsing(str(term), tenders, term_tenders, driver)
+        start_parsing(str(term), tenders, term_tenders, driver, username)
         
     except Exception as e:
         print(f"An error occurred: {str(e)}")
     finally:
         driver.quit()
 
-def get_terms_files(keywords, main_activity):
+def get_terms_files(keywords, main_activity, username):
     for term in keywords:
         print("term: ", term)
         term = term.strip()
         if term:
             tenders = {}
             term_tenders = []
-            setup_search(str(term), tenders, term_tenders, str(main_activity))
+            setup_search(str(term), tenders, term_tenders, str(main_activity), username)
 
 
-def agg_files():
+def agg_files(username):
     directory = os.getcwd()
     dfs = []
 
     # Loop through files in the directory
     for filename in os.listdir(directory):
-        if filename.endswith('.csv'):
+        if filename.endswith(username + '.csv'):
             # Read the CSV file into a DataFrame and append to the list
             filepath = os.path.join(directory, filename)
             df = pd.read_csv(filepath)
@@ -319,8 +319,8 @@ def agg_files():
 
     # Save the filtered results to both CSV and Excel
     today_date = pd.to_datetime('today').strftime('%Y-%m-%d')
-    filtered_csv = f"tenders_{today_date}_filtered.csv"
-    filtered_excel = f"tenders_{today_date}_filtered.xlsx"
+    filtered_csv = f"tenders_{today_date}_filtered_{username}.csv"
+    filtered_excel = f"tenders_{today_date}_filtered_{username}.xlsx"
     
     filtered_df.to_csv(filtered_csv, index=False, encoding='utf-8-sig')
     filtered_df.to_excel(filtered_excel, index=False)
