@@ -132,9 +132,12 @@ def process_request(emails, keywords, selected_option, username):
 
         today_date = pd.to_datetime("today").strftime("%Y-%m-%d")
         file_name = f"tenders_{today_date}_filtered_{username}.csv"
-
+        print("file name: ", file_name)
+        
         if not os.path.isfile(file_name):
-            send_email_without_results(emails, subject, body, username)
+            no_results_subject = f"No Matches Found for {', '.join(keywords)}"
+            no_results_body = f"Keywords: {', '.join(keywords)}\nSelected Option: {selected_option}\nPlease Try Again With Different Keywords or Main Activity."
+            send_email_without_results(emails, no_results_subject, no_results_body)
             return
 
         send_email(emails, subject, body, username)
