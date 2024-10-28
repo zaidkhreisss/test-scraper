@@ -1,8 +1,3 @@
-# user_data = {
-#     "omar": "123",
-#     "zaid":"1234"
-#     }
-
 user_data = {
     "omar": {
         "password": "123",
@@ -13,6 +8,15 @@ user_data = {
         }
     },
     "zaid": {
+        "password": "1234",
+        "progress": {
+            "keywords": [],
+            "selected_option": "",
+            "task_complete": True
+        }
+    },
+
+    "tariq": {
         "password": "1234",
         "progress": {
             "keywords": [],

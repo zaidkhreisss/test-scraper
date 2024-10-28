@@ -1,34 +1,3 @@
-# from selenium import webdriver
-# from selenium.webdriver.common.keys import Keys
-# from selenium.webdriver.common.by import By
-# import time
-# import pandas as pd
-# from utils_consts import *
-# import os 
-# from selenium.webdriver.common.by import By
-# from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-# from xpath import *
-
-
-
-# chrome_options = webdriver.ChromeOptions()
-# # Enable headless mode
-# chrome_options.add_argument("--headless=new")
-# # Set user-agent
-# chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-# # Additional options
-# chrome_options.add_argument("--no-sandbox")
-# chrome_options.add_argument("--disable-dev-shm-usage")
-# # Set the window size to full-screen (1920x1080 or adjust as needed)
-# #chrome_options.add_argument("--window-size=1920,1080")
-# chrome_options.add_argument("--window-size=1920x1080")
-# chrome_options.add_argument('--disable-gpu')
-# driver = webdriver.Chrome(options=chrome_options)
-# # No need for driver.maximize_window() in headless mode as we have set the window size
-# driver.maximize_window()
-
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import pandas as pd
@@ -155,66 +124,6 @@ def start_parsing(term, tenders, term_tenders,driver, username):
 
     return
 
-# def setup_search(term, tenders, term_tenders, main_activityy):
-#     print("getting etimad website..")
-#     website_url = "https://tenders.etimad.sa/Tender/AllTendersForVisitor?PageNumber=1"
-#     driver.get(website_url)
-#     print("got etimad website successfully!!!")
-#     # expand search
-#     search_button = driver.find_element(By.XPATH, "//*[@id='searchBtnColaps']")  # Replace 'button_id' with the actual ID or XPath of the button
-#     search_button.click()
-
-#     # click choose tender status
-#     driver.execute_script("window.scrollBy(0, 500);")
-#     time.sleep(4)
-#     status_button = driver.find_element(By.XPATH,"//*[@id='basicInfo']/div/div[2]/div/div/button")                        
-#     status_button.click()
-
-#     # choose active tenders
-#     driver.execute_script("window.scrollBy(0, 50);")
-#     time.sleep(4)
-#     span_element = driver.find_element(By.XPATH,'//*[@id="basicInfo"]/div/div[2]/div/div/div/ul/li[2]/a')                                                                     
-#     span_element.click()
-
-#     driver.execute_script("window.scrollBy(0, 175);")
-#     time.sleep(4)
-#     main_activity = driver.find_element(By.XPATH, '//*[@id="basicInfo"]/div/div[4]/div/div/button')
-#     main_activity.click()
-
-    
-#     # type اتص to filter results
-#     input_element = driver.find_element(By.XPATH, '//*[@id="basicInfo"]/div/div[4]/div/div/div/div/input')
-#     input_element.clear()
-#     input_element.send_keys(str(main_activityy))
-
-#     option_xpath = get_xpath_for_option(main_activityy)
-#     if option_xpath != "Option not found in the dropdown list.":
-#         # Choose the selected option
-#         selected_option_element = driver.find_element(By.XPATH, option_xpath)
-#         selected_option_element.click()
-#     else:
-#         print("Error: Selected option not found in the dropdown list.")
-#         return
-    
-
-#     driver.execute_script("window.scrollBy(0, 50);")
-
-#     input_element = driver.find_element(By.XPATH, '//*[@id="txtMultipleSearch"]')
-#     input_element.clear()
-#     input_element.send_keys(term)
-
-#     # finally hit search
-#     driver.execute_script("window.scrollBy(0, 35);")
-#     final_search_button = driver.find_element(By.XPATH,'//*[@id="searchBtn"]') 
-#     final_search_button.click()
-#     time.sleep(4)
-#     res = start_parsing(str(term), tenders, term_tenders)
-#     # print("~~",res)
-#     if res == 'NoSuchElementException':
-#         return
-#     else:
-#         tenders[term] = term_tenders
-#         post_process_results(term, tenders, term_tenders)
 def setup_search(term, tenders, term_tenders, main_activityy, username):
     # Each request gets its own WebDriver instance
     driver = webdriver.Chrome(options=chrome_options)
